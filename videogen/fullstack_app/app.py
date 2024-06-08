@@ -1,9 +1,15 @@
 from flask import Flask, render_template, request, jsonify
 import google.generativeai as genai
 
+import requests
+import time
+import json
+
 SCRIPT = ""
 URL = ""
 
+USER_ID = 'MYCO'
+ACCESS_TOKEN = 'eyJraWQiOiJPc0pnWUtUS0tlQkN5eDFKdkVyUGdTZHRpNWRmSzc2aksrTm5mVVI5aVJvPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiI1aWdpODJkYjMzOTFoZ3NsMDF1Z29zMGlsZCIsInRva2VuX3VzZSI6ImFjY2VzcyIsInNjb3BlIjoicGljdG9yeWFwaXNcL3BpY3RvcnlhcGlzLnJlYWQgcGljdG9yeWFwaXNcL3BpY3RvcnlhcGlzLndyaXRlIiwiYXV0aF90aW1lIjoxNzE3ODY0MTIyLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAudXMtZWFzdC0yLmFtYXpvbmF3cy5jb21cL3VzLWVhc3QtMl9zbFRDOURZcHoiLCJleHAiOjE3MTc4Njc3MjIsImlhdCI6MTcxNzg2NDEyMiwidmVyc2lvbiI6MiwianRpIjoiZDJjYTMzOGItNDVmMy00NTM0LTljMjQtODMxNGZkNzMyMjVjIiwiY2xpZW50X2lkIjoiNWlnaTgyZGIzMzkxaGdzbDAxdWdvczBpbGQifQ.CwGudBZsISjH6PVAUk2wUqJKQMySgP-0KKQflg8bSE0R6oP5bFoOPiBl1W4_K-K_JXs32dJCrwbccrizBe5ApW_TfWbaHkEfWheTXh9751JDpRykJuSF5b91UPg9ZppCllsfiBjDXTSB5GmO_I7OJvFfEXZzEBIgCi8HZEVlb9ZqjcFHWCMe8CtnoW9NrSMPLuJD7ktbSWr6bEDxQbPIzKMaSccMGxJhpjRnXSRCe1_S_j6d4FryDzJt1HG4tjSpZWA6hG7R1rwCVwUzmR7hC-5PuuZZQjGKHyFeoWdT4hcNDXgjYbt0hsaCFmKNtVIV3Yh3KjLNsoWzf1iQzOB4dQ'
 API_KEY = 'AIzaSyCGb1skZSqm7Z7BkNg8lj6OBq33lGjYY2s'
 genai.configure(api_key=API_KEY)
 
@@ -64,117 +70,105 @@ the canine flees, but the nightmare's chase has begun
 
 app = Flask(__name__)
 
-def generate_video(topic, keywords):
-    import requests
-    import time
-    import json
+def initiate_video_preview(topic, keywords):
+    global SCRIPT
+    url = "https://api.pictory.ai/pictoryapis/v1/video/storyboard"
+    headers = {
+        'accept': 'application/json',
+        'content-type': 'application/json',
+        'Authorization': f'Bearer {ACCESS_TOKEN}',
+        'X-Pictory-User-Id': USER_ID
+    }
+    data = {
+        "audio": {
+            "aiVoiceOver": {
+                "speaker": "Arthur",
+                "speed": "100",
+                "amplifyLevel": "1"
+            },
+            "autoBackgroundMusic": True,
+            "backGroundMusicVolume": 0.5
+        },
+        "brandLogo": {
+            "url": "https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg",
+            "verticalAlignment": "top",
+            "horizontalAlignment": "right"
+        },
+        "videoName": "test",
+        "videoDescription": "keywords",
+        "language": "en",
+        "videoWidth": "1080",
+        "videoHeight": "1920",
+        "scenes": [
+            {
+                "text": SCRIPT,
+                "voiceOver": True,
+                "splitTextOnNewLine": True,
+                "splitTextOnPeriod": True
+            }
+        ],
+        "webhook": "https://webhook.site/b88330d8-43f6-4eb6-b8e2-232f515016b1"
+    }
 
-    # Define your credentials and constants
-    USER_ID = 'MYCO'
-    ACCESS_TOKEN = 'eyJraWQiOiJPc0pnWUtUS0tlQkN5eDFKdkVyUGdTZHRpNWRmSzc2aksrTm5mVVI5aVJvPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiI1aWdpODJkYjMzOTFoZ3NsMDF1Z29zMGlsZCIsInRva2VuX3VzZSI6ImFjY2VzcyIsInNjb3BlIjoicGljdG9yeWFwaXNcL3BpY3RvcnlhcGlzLnJlYWQgcGljdG9yeWFwaXNcL3BpY3RvcnlhcGlzLndyaXRlIiwiYXV0aF90aW1lIjoxNzE3ODQ5NTg0LCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAudXMtZWFzdC0yLmFtYXpvbmF3cy5jb21cL3VzLWVhc3QtMl9zbFRDOURZcHoiLCJleHAiOjE3MTc4NTMxODQsImlhdCI6MTcxNzg0OTU4NCwidmVyc2lvbiI6MiwianRpIjoiZmVkZGEzMDktM2ZiYi00YjY5LTgwMDUtZDU5NWY0ZjcyZjMzIiwiY2xpZW50X2lkIjoiNWlnaTgyZGIzMzkxaGdzbDAxdWdvczBpbGQifQ.Uc93GkBmqkFUqMR2-KFcFXnmag3dJQYFvCeUFyt2rRZ3mNmFWm4hGl63FvnG56BjCY36mkqGmOJj5S6Kxerx5Q-oWoijFCcAlxPXdRdNO8QtMXf9XDOrPCuk910OeNQ1T0fafdOcov5jYRYETDJk1Kmv-qQMELu_uXzZSPXnPCJuTGWKQAMm8kjv_dnlOVro8Cbb1ygmUj4O2BJEGWq1vdy7zxH7Z9Rd4lOs0atsH4vYz2gjSBlelD1kkuyMXYQ7KplYe6Ywq59lb0TXTVSXNCTfdDC3H_6RMgN4MlVuCPSnVxNuwO1yO4T-GNFhZpFtXaGhV4NLQYy0eLIjkgBjjA'
+    print(SCRIPT)
     
-    # Function to initiate video preview request
-    def initiate_video_preview():
-        url = "https://api.pictory.ai/pictoryapis/v1/video/storyboard"
-        headers = {
-            'accept': 'application/json',
-            'content-type': 'application/json',
-            'Authorization': f'Bearer {ACCESS_TOKEN}',
-            'X-Pictory-User-Id': USER_ID
-        }
-        data = {
-            "audio": {
-                "aiVoiceOver": {
-                    "speaker": "Arthur",
-                    "speed": "100",
-                    "amplifyLevel": "1"
-                },
-                "autoBackgroundMusic": True,
-                "backGroundMusicVolume": 0.5
-            },
-            "brandLogo": {
-                "url": "https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg",
-                "verticalAlignment": "top",
-                "horizontalAlignment": "right"
-            },
-            "videoName": topic,
-            "videoDescription": keywords,
-            "language": "en",
-            "videoWidth": "1080",
-            "videoHeight": "1920",
-            "scenes": [
-                {
-                    "text": SCRIPT,
-                    "voiceOver": True,
-                    "splitTextOnNewLine": True,
-                    "splitTextOnPeriod": True
-                }
-            ],
-            "webhook": "https://webhook.site/b88330d8-43f6-4eb6-b8e2-232f515016b1"
-        }
-        
-        response = requests.post(url, headers=headers, data=json.dumps(data))
-        if response.status_code == 200:
-            return response.json()
-        else:
-            print("Failed to initiate video preview request")
-            print(response.text)
-            return None
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print("Failed to initiate video preview request")
+        print(response.text)
+        return None
 
-    # Function to monitor job status
-    def monitor_job_status(job_id):
-        url = f"https://api.pictory.ai/pictoryapis/v1/jobs/{job_id}"
-        headers = {
-            'Authorization': f'Bearer {ACCESS_TOKEN}',
-            'X-Pictory-User-Id': USER_ID,
-            'accept': 'application/json'
-        }
+def monitor_job_status(job_id):
+    url = f"https://api.pictory.ai/pictoryapis/v1/jobs/{job_id}"
+    headers = {
+        'Authorization': f'Bearer {ACCESS_TOKEN}',
+        'X-Pictory-User-Id': USER_ID,
+        'accept': 'application/json'
+    }
     # Initial delay to avoid immediate rate limiting
-        time.sleep(2)
+    time.sleep(2)
+    
+    while True:
+        response = requests.get(url, headers=headers)
         
-
-        while True:
-            response = requests.get(url, headers=headers)
-            
-
-            if response.status_code == 200:
-                job_status = response.json()
-                print(f"Job Status Response: {job_status}")  # Debug: Print the entire response for inspection
-                
-                if 'status' in job_status['data'] and job_status['data']['status'] == 'in-progress':
-                    print("Job is still in progress...")
-                    time.sleep(3)  # Wait for 10 seconds before checking again
-                else:
-                    return job_status
-                        
-                        
-                
-                    
-            else:
-                print("Failed to get job status")
-                print(response.text)
-                return None
-
-    # Function to initiate final video rendering
-    def initiate_video_render(render_params):
-        url = "https://api.pictory.ai/pictoryapis/v1/video/render"
-        headers = {
-            'accept': 'application/json',
-            'content-type': 'application/json',
-            'Authorization': f'Bearer {ACCESS_TOKEN}',
-            'X-Pictory-User-Id': USER_ID
-        }
-        
-        response = requests.post(url, headers=headers, data=json.dumps(render_params))
         if response.status_code == 200:
-            return response.json()
+            job_status = response.json()
+            print(f"Job Status Response: {job_status}")  # Debug: Print the entire response for inspection
+            
+            if 'status' in job_status['data'] and job_status['data']['status'] == 'in-progress':
+                print("Job is still in progress...")
+                time.sleep(3)  # Wait for 3 seconds before checking again
+            else:
+                return job_status
         else:
-            print("Failed to initiate video rendering")
+            print("Failed to get job status")
             print(response.text)
             return None
 
+def initiate_video_render(render_params):
+    url = "https://api.pictory.ai/pictoryapis/v1/video/render"
+    headers = {
+        'accept': 'application/json',
+        'content-type': 'application/json',
+        'Authorization': f'Bearer {ACCESS_TOKEN}',
+        'X-Pictory-User-Id': USER_ID
+    }
+    
+    response = requests.post(url, headers=headers, data=json.dumps(render_params))
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print("Failed to initiate video rendering")
+        print(response.text)
+        return None
+
+def generate_video(topic, keywords):
+    global URL
+    
     # Initiate video preview request
-    preview_response = initiate_video_preview()
+    preview_response = initiate_video_preview(topic, keywords)
     if preview_response:
         job_id = preview_response['data']['job_id']
         print(f"Job ID: {job_id}")
@@ -187,22 +181,21 @@ def generate_video(topic, keywords):
                 preview_url = job_status['data']['preview']
                 render_params = job_status['data']['renderParams']
                 print(f"Preview URL: {preview_url}")
-                global URL
                 URL = preview_url
                 
-                # Initiate final video rendering
+                # Uncomment the following lines if you want to initiate final video rendering
                 # render_response = initiate_video_render(render_params)
                 # if render_response:
                 #     final_job_id = render_response['data']['job_id']
                 #     print(f"Final Job ID: {final_job_id}")
                     
                 #     # Monitor final rendering job status
-                #     # final_job_status = monitor_job_status(final_job_id)
-                #     # if final_job_status and 'data' in final_job_status and 'videoURL' in final_job_status['data']:
-                #     #     final_video_url = final_job_status['data']['videoURL']
-                #     #     print(f"Final Video URL: {final_video_url}")
-                #     # else:
-                #     #     print("Failed to monitor final job status")
+                #     final_job_status = monitor_job_status(final_job_id)
+                #     if final_job_status and 'data' in final_job_status and 'videoURL' in final_job_status['data']:
+                #         final_video_url = final_job_status['data']['videoURL']
+                #         print(f"Final Video URL: {final_video_url}")
+                #     else:
+                #         print("Failed to monitor final job status")
                 # else:
                 #     print("Failed to initiate final video rendering")
             else:
@@ -241,6 +234,7 @@ def generate_script(topic, keywords, overall_tone, input_prompt):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    global SCRIPT
     if request.method == 'POST':
         data = request.json
         action = data.get('action')
@@ -263,9 +257,7 @@ def index():
             keywords = data.get('keywords')
             video_url = generate_video(topic, keywords)
             return jsonify(video_url=video_url)
-            
-
-
+        
     return render_template('index.html')
 
 if __name__ == "__main__":
