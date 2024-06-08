@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What's Your Idea?</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header>
+        <div class="logo">MYCO</div>
+        <button id="reset" class="reset-button">Reset</button>
+    </header>
+    <main>
+        <div class="hero">
+            <h1>What's Your Idea?</h1>
+            <form id="idea-form" style="width: auto; height: auto;">
+                <input type="text" name="idea" id="idea-input" placeholder="Enter your idea here" required>
+                <button type="submit">→</button>
+            </form>
+        </div>
+        <div class="result" id="result-section" style="display: none;">
+            <h2>Topic:</h2>
+            <p id="topic"></p>
+            <h2>Keywords:</h2>
+            <p id="keywords"></p>
+            <h2>Overall Tone:</h2>
+            <p id="tone"></p>
+            <div style="color:green">
+                <h3>Are you happy with the following generated keywords and overall tones?</h3>
+                <h4>If not, please click on Regenerate</h4>
+                <h4>If yes, please press Accept to continue</h4>
+                <button id="generate-more">Regenerate</button>
+                <button id="accept">Accept</button>
+            </div>    
+        </div>
+        <div class="result" id="script-result" style="display: none;">
+            <h2>Generated Script:</h2>
+            <p id="script"></p>
+        </div>
+    </main>
+    <script>
+        const ideaForm = document.getElementById('idea-form');
+        const resultSection = document.getElementById('result-section');
+        const scriptResult = document.getElementById('script-result');
+        const topicElement = document.getElementById('topic');
+        const keywordsElement = document.getElementById('keywords');
+        const toneElement = document.getElementById('tone');
+        const scriptElement = document.getElementById('script');
+        const generateMoreButton = document.getElementById('generate-more');
+        const acceptButton = document.getElementById('accept');
+        const resetButton = document.getElementById('reset');
+
+        ideaForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const topic = document.getElementById('idea-input').value;
+            topicElement.textContent = topic;
+            resultSection.style.display = 'block';
+            scriptResult.style.display = 'none';
+            await generateKeywordsTone(topic);
+        });
+
+        generateMoreButton.addEventListener('click', async () => {
+            const topic = topicElement.textContent;
+            await generateKeywordsTone(topic);
+        });
+
+        acceptButton.addEventListener('click', async () => {
+            const topic = topicElement.textContent;
+            const keywords = keywordsElement.textContent.split(', ');
+            const overallTone = toneElement.textContent.split(', ');
+            await generateScript(topic, keywords, overallTone);
+        });
+
+        resetButton.addEventListener('click', () => {
+            document.getElementById('idea-input').value = '';
+            resultSection.style.display = 'none';
+            scriptResult.style.display = 'none';
+            topicElement.textContent = '';
+            keywordsElement.textContent = '';
+            toneElement.textContent = '';
+            scriptElement.textContent = '';
+            document.querySelector('.hero').style.display = 'block';
+        });
+
+        async function generateKeywordsTone(topic) {
+            const response = await fetch('/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ action: 'generate_keywords_tone', topic: topic })
+            });
+            const data = await response.json();
+            keywordsElement.textContent = data.keywords.join(', ');
+            toneElement.textContent = data.overall_tone.join(', ');
+        }
+
+        async function generateScript(topic, keywords, overallTone) {
+            const response = await fetch('/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ action: 'generate_script', topic: topic, keywords: keywords, overall_tone: overallTone })
+            });
+            const data = await response.json();
+            scriptElement.textContent = data.script;
+            scriptResult.style.display = 'block';
+            resultSection.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
