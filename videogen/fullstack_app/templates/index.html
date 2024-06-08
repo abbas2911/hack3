@@ -54,7 +54,6 @@
         const generateMoreButton = document.getElementById('generate-more');
         const acceptButton = document.getElementById('accept');
         const resetButton = document.getElementById('reset');
-        const generateVideo = document.getElementById('generate_video')
 
         ideaForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -110,17 +109,6 @@
                 body: JSON.stringify({ action: 'generate_script', topic: topic, keywords: keywords, overall_tone: overallTone })
             });
 
-        async function openUrl() {
-            var xhr = new XMLHttpRequest();
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    var url = xhr.responseText;
-                    window.open(url, '_blank');
-                }
-            };
-            xhr.open("GET", "/get_url", true);
-            xhr.send();
-        }
             const data = await response.json();
             scriptElement.textContent = data.script;
             scriptResult.style.display = 'block';
