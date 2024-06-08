@@ -39,7 +39,7 @@
             <p id="script"></p>
 
             <div>
-                <button id="generate_video">Generate Video</button>
+                <button id="generate-video-btn">Generate Video</button>
             </div>
         </div>
     </main>
@@ -54,6 +54,7 @@
         const generateMoreButton = document.getElementById('generate-more');
         const acceptButton = document.getElementById('accept');
         const resetButton = document.getElementById('reset');
+        const generateVideoButton = document.getElementById('generate-video-btn');
 
         ideaForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -100,6 +101,27 @@
             toneElement.textContent = data.overall_tone.join(', ');
         }
 
+        async function generateVideo(topic, keywords) {
+            const response = await fetch('/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ action: "generate_video", topic: topic, keywords: keywords })
+            });
+
+            const data = await response.json();
+
+            // if (data && data.url) {
+            //     // Update the HTML to display the generated URL
+            //     document.getElementById('video-url').textContent = data.url;
+            //     document.getElementById('video-url').style.display = 'block';
+            // } else {
+            //     console.error('Failed to generate video URL');
+            // }
+        }
+
+
         async function generateScript(topic, keywords, overallTone) {
             const response = await fetch('/', {
                 method: 'POST',
@@ -114,6 +136,13 @@
             scriptResult.style.display = 'block';
             resultSection.style.display = 'none';
         }
+
+        generateVideoButton.addEventListener('click', async () => {
+            const topic = topicElement.textContent;
+            const keywords = keywordsElement.textContent.split(', ');
+            await generateVideo(topic, keywords);
+        });
+
     </script>
 </body>
 </html>

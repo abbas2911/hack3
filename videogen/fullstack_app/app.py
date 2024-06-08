@@ -187,6 +187,7 @@ def generate_video(topic, keywords):
                 preview_url = job_status['data']['preview']
                 render_params = job_status['data']['renderParams']
                 print(f"Preview URL: {preview_url}")
+                global URL
                 URL = preview_url
                 
                 # Initiate final video rendering
@@ -265,7 +266,7 @@ def index():
             
 
 
-        return render_template('index.html')
+    return render_template('index.html')
 
 if __name__ == "__main__":
     app.run(debug=True)
